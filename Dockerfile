@@ -19,9 +19,8 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# Copiar código (las credenciales se inyectan via HF Secrets, no aquí)
-COPY bioagent/ ./bioagent/
-COPY main.py .
+# Copiar todo el código (las credenciales se inyectan via HF Secrets, no aquí)
+COPY . .
 
 # Puerto no requerido para bots de polling, pero HF lo espera
 EXPOSE 7860
