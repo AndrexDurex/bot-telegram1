@@ -19,3 +19,4 @@ BioAgent is a specialized AI assistant that helps manage personal routines, heal
 
 ## Deployment (Hugging Face Spaces)
 This project is configured as a Docker Space on Hugging Face.
+Last updated: 2026-03-09
