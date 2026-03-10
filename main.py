@@ -14,7 +14,7 @@ if __name__ == "__main__":
     import socket
     import os
     import sys
-    print("--- DIAGNOSTICO STARTUP ---", flush=True)
+    print("--- DIAGNOSTICO STARTUP V2.1 ---", flush=True)
     token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     print(f"TELEGRAM_BOT_TOKEN length: {len(token)}", flush=True)
     if token:
