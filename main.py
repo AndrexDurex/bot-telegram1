@@ -53,6 +53,21 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ ERROR CONEXION IP {tg_ip}: {e}", flush=True)
 
+    # --- WORKAROUND DNS TELEGRAM ---
+    # Debido a que HF bloquea la resolucion de api.telegram.org, 
+    # parcheamos socket para que resuelva a la IP directamente.
+    print("Aplicando monkeypatch de DNS para Telegram...", flush=True)
+    original_getaddrinfo = socket.getaddrinfo
+    def patched_getaddrinfo(host, port, *args, **kwargs):
+        if host == "api.telegram.org":
+            # Retornar la IP que ya verificamos que funciona
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('149.154.167.220', port))]
+        return original_getaddrinfo(host, port, *args, **kwargs)
+    
+    socket.getaddrinfo = patched_getaddrinfo
+    print("✅ DNS Monkeypatch aplicado.", flush=True)
+    # -------------------------------
+
     print("--- FIN DIAGNOSTICO ---", flush=True)
     sys.stdout.flush()
     run()
