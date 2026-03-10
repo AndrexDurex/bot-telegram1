@@ -25,5 +25,5 @@ COPY . .
 # Puerto no requerido para bots de polling, pero HF lo espera
 EXPOSE 7860
 
-# Arrancar el bot
-CMD ["python", "main.py"]
+# Arrancar el servidor web y el bot
+CMD ["python", "app.py"]
