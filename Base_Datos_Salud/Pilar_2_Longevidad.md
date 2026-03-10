@@ -1,0 +1,51 @@
+# PILAR 2: LONGEVIDAD Y SUPLEMENTACIÓN
+
+### 1. Guía Maestra de Suplementos
+
+**EVIDENCIA SEGÚN FUENTES:**
+
+- **Magnesio:** Participa en más de 300 reacciones, como la producción de energía (ATP), la reparación del ADN y la modulación de la inflamación celular.
+  - *Treonato de magnesio:* Es la forma recomendada para el cerebro y el sueño. Aumenta las fases de sueño profundo y REM, reduce la ansiedad y la latencia del sueño al cruzar la barrera hematoencefálica. Dosis estudiada: 1 gramo diario.
+  - *Citrato de magnesio:* Útil en adultos mayores para reducir el tiempo en quedarse dormidos (dosis de 320 a 700 mg) y para tratar la constipación atrayendo agua al intestino.
+  - *Advertencias:* Tomar altas dosis de magnesio (ej. 900 mg) no mejora los calambres y puede ser perjudicial. No debe mezclarse con calcio, alcohol ni inhibidores de la bomba de protones (Omeprazol), ya que disminuyen su absorción.
+- **Omega 3:** Esencial para bajar la inflamación sistémica y generar un cerebro sano.
+  - *Formas:* **DHA** forma la mielina (aislante de tus neuronas) protegiendo la memoria; **EPA** beneficia la salud visual y cardiovascular; **ALA** (de semillas) tiene una tasa de conversión a DHA/EPA muy pobre (menos del 2%).
+  - *Fuente recomendada:* El aceite de **Krill** es ideal. Aporta DHA y EPA junto a fosfatidilcolina (clave para las membranas celulares) y astaxantina (potente antioxidante antiinflamatorio).
+- **Melena de León:** Hongo nootrópico que cruza la barrera hematoencefálica. Sus compuestos (hericenonas y erinacinas) estimulan el factor de crecimiento nervioso (NGF/BDNF), la neuroplasticidad y la mielinización.
+  - *Dosis:* 1 a 3 gramos diarios. Es ideal para prevenir deterioro cognitivo crónico más que para un efecto estimulante rápido.
+- **Reishi:** Útil para la protección neuronal bajo hipoxia (poco flujo de oxígeno), mejora la resiliencia al estrés crónico y estimula factores de crecimiento como BDNF en la memoria.
+- **Cordyceps:** Su compuesto *cordicepina* aumenta la producción de energía (ATP), reduce la acumulación de ácido láctico y retrasa la fatiga mental y física durante el sobreesfuerzo y estrés.
+
+### 2. Protocolos para aumentar células madre de forma natural
+
+Una baja reserva de células madre funciona como tu reloj de envejecimiento biológico. Según las fuentes, podemos incrementarlas con:
+- **Extracto de fruto de café:** Aumenta dramáticamente las células madre pluripotenciales y los niveles de neurotrofina para generar nuevas neuronas.
+- **Algas (Clorela y Espirulina):** Fomentan la creación de nuevos glóbulos rojos en la médula ósea. La clorela aumenta la *movilización* de estas células hacia el tejido dañado, mientras la espirulina reduce la inflamación cerebral.
+- **Fitoplancton Marino:** En particular el *Nannochloropsis*, rico en aminoácidos y nucleótidos para síntesis celular.
+- **Aloe Vera:** Al estabilizar la glucosa (una glucosa alta frena la circulación de células madre), permite una mejor movilización de células para reparar tejidos.
+- **Ayuno Prolongado:** El ayuno intermitente profundo (más de 22 horas y maximizado a las 48 horas) reduce la hormona IGF-1, detonando la formación endógena de células madre.
+
+### 3. Las 5 sustancias que frenan el envejecimiento celular
+
+Estas moléculas engañan a las vías metabólicas para fomentar reparación en lugar de desgaste:
+- **Resveratrol:** Bloquea la formación de células "zombies" (senescentes), reduce el estrés oxidativo e imita los beneficios de la restricción calórica.
+- **Rapamicina:** Inhibe la vía mTOR. Evita que las células crezcan y se dividan de forma defectuosa, enviándolas a un estado de supervivencia y autofagia (reciclaje de daños).
+- **AKG (Alfa-cetoglutarato):** Molécula del ciclo de Krebs que preserva el metabolismo energético, retrasa la fragilidad y ha demostrado reducir hasta 8 años de edad biológica, acortando los años de morbilidad en la vejez.
+- **NAD (y precursores como NMN):** El combustible para reparar el ADN y activar a las sirtuinas (SIRT, proteínas de la longevidad). Sus niveles caen drásticamente con la edad y restaurarlos rejuvenece a las mitocondrias.
+- **Espermidina:** Poliamina que activa potentemente el mecanismo celular de autofagia (eliminar la "basura" de las células) con beneficios demostrados en salud cardiovascular.
+- **Senolíticos *(Bonus)*:** Sustancias como Dasatinib, Quercetina o Fisetina, encargadas de ir a cazar y destruir proactivamente las células senescentes que intoxican a los tejidos vecinos.
+
+### 4. Impacto de la suplementación en la prevención cardiovascular y de infartos
+
+Las enfermedades cardiovasculares inician por daño y rigidez en el endotelio (paredes de las arterias).
+- **Magnesio:** Un déficit incrementa la acumulación de lípidos en arterias como defensa a la oxidación y promueve la agregación de plaquetas (trombos). Niveles correctos garantizan la elasticidad vascular y la vasodilatación mediante la vía del óxido nítrico.
+- **Vitamina B3 (Niacina):** Ha demostrado ser efectiva para bajar entre un 20% a 30% los valores de la Lipoproteína (a), la variante de colesterol LDL genéticamente más tóxica y asociada a infartos.
+- **Omega-3 (EPA/DHA):** Su poder antioxidante reduce la inflamación de la pared arterial, una condición necesaria (inflamación + LDL) para formar placas ateroescleróticas.
+- **Fibras Solubles (Psyllium / Inulina):** Reducen el impacto glucémico y disminuyen efectivamente el colesterol LDL que circula en sangre.
+
+### 5. Estrategias de 'Expectativa de Salud' (Healthspan) vs 'Expectativa de Vida'
+
+La meta biológica moderna no es aumentar la longevidad máxima para vivir postrado, sino expandir drásticamente la "expectativa de salud"; vivir funcional, sano y mentalmente ágil hasta el final.
+- **Restricción Calórica vs Carencia:** El estándar de oro para el *healthspan* es consumir un 5% a 10% menos de tus calorías de mantenimiento, lo cual detiene el envejecimiento celular. Sin embargo, no se deben sacrificar micronutrientes, o la carencia te enfermará por otra vía.
+- **Inhibir vs Estimular:** El cuerpo requiere un choque de fuerzas. Por la noche y en ayuno, necesitamos catabolismo (inhibir mTOR y activar AMPK/Autofagia para "reciclar y limpiar"). De día y tras el ejercicio muscular pesado, requerimos anabolismo (activar mTOR) para evitar la fragilidad de huesos y músculos.
+- **La Base Funcional:** Mantener una base aeróbica excelente (VO2 Max medido en Zona 2 de ejercicio) reduce 5 veces el riesgo de enfermedades crónicas, asegurando independencia motriz en la vejez.

@@ -1,0 +1,54 @@
+# ── Credenciales (NUNCA subir a Git) ─────────────────────────────────────────
+firebase-credentials.json
+calendar_token.json
+google_credentials.json
+
+# Credentials
+.env
+*.json
+!README.md
+!requirements.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# Data & Media
+*.m4a
+*.webm
+*.mp3
+chroma_db/
+_tmp_*
+_trans_*
+transcripciones/
+transcripter_log.txt
+enlaces_extraidos.txt
+fireflies_log.txt
+error_*.txt
+*.json
+!README.md
+!requirements.txt
+!app.py
+!bioagent/
+!main.py
+!Dockerfile
+
+# ── Variables de entorno ──────────────────────────────────────────────────────
+.env
+
+# ── Cache RAG local ───────────────────────────────────────────────────────────
+chroma_db/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp

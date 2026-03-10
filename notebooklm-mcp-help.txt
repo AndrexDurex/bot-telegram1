@@ -1,0 +1,13 @@
+﻿Usage: notebooklm-mcp server [OPTIONS]
+
+  Start the FastMCP v2 NotebookLM server
+
+Options:
+  -n, --notebook TEXT           Notebook ID to use
+  --headless                    Run in headless mode
+  --port INTEGER                Server port (default: 8000)
+  --host TEXT                   Server host (default: 127.0.0.1)
+  --root-dir TEXT               Root directory for server operations (default:
+                                current directory)
+  --transport [stdio|http|sse]  Transport protocol (default: stdio)
+  --help                        Show this message and exit.
