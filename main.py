@@ -30,22 +30,28 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ ERROR DNS GOOGLE: {e}", flush=True)
 
-    # Probar DNS Telegram
+    # Probar DNS Telegram (Forzando IPv4)
     try:
-        print("Probando resolucion DNS para api.telegram.org...", flush=True)
-        addr = socket.gethostbyname("api.telegram.org")
-        print(f"✅ DNS TELEGRAM OK: api.telegram.org -> {addr}", flush=True)
+        print("Probando resolucion DNS (AF_INET) para api.telegram.org...", flush=True)
+        # Forzar IPv4
+        info = socket.getaddrinfo("api.telegram.org", 443, family=socket.AF_INET)
+        addr = info[0][4][0]
+        print(f"✅ DNS TELEGRAM IPv4 OK: api.telegram.org -> {addr}", flush=True)
     except Exception as e:
-        print(f"❌ ERROR DNS TELEGRAM: {e}", flush=True)
+        print(f"❌ ERROR DNS TELEGRAM IPv4: {e}", flush=True)
 
-    # Probar conexion TCP
+    # Si el anterior fallo, probar con un DNS provider explicito (opcional si tenemos dnspython)
+    # Por ahora solo intentaremos ver si el error persiste con AF_INET.
+
+    # Probar conexion TCP directa a IP de Telegram (saltando DNS)
     try:
-        print("Probando conexion TCP a 8.8.8.8:53 (Google DNS)...", flush=True)
-        s = socket.create_connection(("8.8.8.8", 53), timeout=5)
+        tg_ip = "149.154.167.220" # Una de las IPs de api.telegram.org
+        print(f"Probando conexion TCP a {tg_ip}:443 (Telegram IP)...", flush=True)
+        s = socket.create_connection((tg_ip, 443), timeout=5)
         s.close()
-        print("✅ CONEXION TCP 8.8.8.8 OK", flush=True)
+        print(f"✅ CONEXION TCP {tg_ip} OK (Red permite Telegram por IP)", flush=True)
     except Exception as e:
-        print(f"❌ ERROR CONEXION 8.8.8.8: {e}", flush=True)
+        print(f"❌ ERROR CONEXION IP {tg_ip}: {e}", flush=True)
 
     print("--- FIN DIAGNOSTICO ---", flush=True)
     sys.stdout.flush()
