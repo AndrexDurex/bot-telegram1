@@ -3,25 +3,25 @@ import sys
 
 # --- DNS WORKAROUND CRÍTICO PARA HUGGING FACE ---
 # api.telegram.org -> 149.154.167.220
-# Ponemos esto AL PRINCIPIO de todo antes de cualquier otro import.
-_orig_getaddrinfo = socket.getaddrinfo
 def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-    if host == "api.telegram.org":
-        # Forzamos la IP que validamos que funciona con TCP
-        return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('149.154.167.220', int(port)))]
-    return _orig_getaddrinfo(host, port, family, type, proto, flags)
+    if host and ("api.telegram.org" in host or "telegram.org" in host):
+        # Retornamos la IP que si funciona en HF
+        return [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('149.154.167.220', int(port)))]
+    return socket._orig_getaddrinfo(host, port, family, type, proto, flags)
 
-socket.getaddrinfo = _patched_getaddrinfo
+if not hasattr(socket, "_orig_getaddrinfo"):
+    socket._orig_getaddrinfo = socket.getaddrinfo
+    socket.getaddrinfo = _patched_getaddrinfo
 
-# También parchamos gethostbyname por si acaso
+# También parchamos gethostbyname
 _orig_gethostbyname = socket.gethostbyname
 def _patched_gethostbyname(host):
-    if host == "api.telegram.org":
+    if host and ("api.telegram.org" in host or "telegram.org" in host):
         return "149.154.167.220"
     return _orig_gethostbyname(host)
 socket.gethostbyname = _patched_gethostbyname
 
-print("--- [WORKAROUND] DNS Monkeypatch (api.telegram.org -> 149.154.167.220) ACTIVADO ---", flush=True)
+print("--- [WORKAROUND] DNS Monkeypatch V2.5 ACTIVADO ---", flush=True)
 # ---------------------------------------------
 
 import logging
