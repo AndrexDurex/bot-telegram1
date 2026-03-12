@@ -1,6 +1,9 @@
 
 import os
 import sys
+import logging
+from dotenv import load_dotenv
+from bioagent.startup import prepare_credentials
 
 # Si Hugging Face espera que abramos un puerto (FastAPI/Gradio), le daremos un 
 # pequeño servidor dummy de salud para que no mate el contenedor por timeout.
@@ -32,9 +35,15 @@ def run_bot():
         print(f"❌ ERROR CRÍTICO EN EL BOT: {e}", flush=True)
 
 if __name__ == "__main__":
+    # 1. Cargar variables de entorno (especialmente importante en local)
+    load_dotenv()
+
+    # 2. Restaurar credenciales desde secrets si estamos en producción
+    print("--- PREPARANDO CREDENCIALES ---", flush=True)
+    prepare_credentials()
     
     # Arrancamos el bot en un hilo normal, no demonio, para que al recibir SIGTERM
-    # desde Hugging Face, de tiempo al event loop de telegram de cerrarse limpiamente
+    # desde Hugging Face, dé tiempo al event loop de telegram de cerrarse limpiamente
     # antes de que el proceso muera.
     bot_thread = threading.Thread(target=run_bot, daemon=False)
     bot_thread.start()
