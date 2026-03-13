@@ -19,16 +19,17 @@ app = FastAPI(title="BioAgent Health Check")
 def health_check():
     return {"status": "ok", "bot": "running"}
 
+def run_server():
+    """Ejecuta el servidor FastAPI en un hilo secundario."""
+    print("--- INICIANDO SERVIDOR HEALTHCHECK EN HILO SECUNDARIO ---", flush=True)
+    # Usamos la instancia 'app' directamente aquí ya que 'app:app' 
+    # a veces da problemas en hilos secundarios con uvicorn.
+    uvicorn.run(app, host="0.0.0.0", port=7860, log_level="warning")
+
 def run_bot():
-    """Ejecuta el bot en su propio thread para que tenga su propio event loop."""
-    print("--- INICIANDO HILO DEL BOT DE TELEGRAM ---", flush=True)
-    import asyncio
+    """Ejecuta el bot en el hilo principal."""
+    print("--- INICIANDO BOT DE TELEGRAM (HILO PRINCIPAL) ---", flush=True)
     from bioagent.bot import run
-    
-    # Necesario para que apscheduler y telegram tengan su propio loop en este thread
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
     try:
         run()
     except Exception as e:
@@ -49,13 +50,10 @@ if __name__ == "__main__":
     print("--- PREPARANDO CREDENCIALES ---", flush=True)
     prepare_credentials()
     
-    # Arrancamos el bot en un hilo normal, no demonio, para que al recibir SIGTERM
-    # desde Hugging Face, dé tiempo al event loop de telegram de cerrarse limpiamente
-    # antes de que el proceso muera.
-    bot_thread = threading.Thread(target=run_bot, daemon=False)
-    bot_thread.start()
+    # 3. Arrancamos el servidor dummy en un hilo secundario (demonio)
+    # Lo ponemos como demonio para que si el bot muere, el proceso termine.
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
     
-    # Arrancamos el servidor dummy en el hilo principal para satisfacer
-    # el healthcheck de Hugging Face (espera algo en el puerto 7860).
-    print("--- INICIANDO SERVIDOR DUMMY HEALTHCHECK EN 0.0.0.0:7860 ---", flush=True)
-    uvicorn.run("app:app", host="0.0.0.0", port=7860, log_level="warning")
+    # 4. Arrancamos el bot en el hilo principal (REQUERIDO para señales de sistema)
+    run_bot()
