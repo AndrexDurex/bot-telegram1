@@ -38,6 +38,13 @@ if __name__ == "__main__":
     # 1. Cargar variables de entorno (especialmente importante en local)
     load_dotenv()
 
+    # Diagnóstico de variables críticas (enmascaradas)
+    print("--- DIAGNÓSTICO DE ENTORNO ---", flush=True)
+    for var in ["TELEGRAM_BOT_TOKEN", "GEMINI_API_KEY", "FIREBASE_RTDB_URL", "OWNER_CHAT_ID"]:
+        val = os.getenv(var, "")
+        masked = val[:4] + "..." + val[-4:] if len(val) > 8 else ("Configurado" if val else "FALTANTE")
+        print(f"🔍 {var}: {masked}", flush=True)
+
     # 2. Restaurar credenciales desde secrets si estamos en producción
     print("--- PREPARANDO CREDENCIALES ---", flush=True)
     prepare_credentials()

@@ -1,0 +1,61 @@
+git : remote: [31m----
+-----------------------
+-----------------------
+-----------------------
+[0m        
+En l?nea: 1 Car?cter: 1
++ git push hf 
+master:main -f 2>&1 | 
+Out-File -FilePath 
+"push_final.txt" ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (remote: [31m   
+ --...---[0m          
+  :String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+remote: [31mYour push 
+was rejected because 
+it contains files 
+larger than 10 
+MiB.[0m        
+remote: [31mPlease 
+use https://git-lfs.git
+hub.com/ to store 
+large files.[0m       
+ 
+remote: [31mSee also: 
+https://hf.co/docs/hub/
+repositories-getting-st
+arted#terminal[0m     
+   
+remote: [31m[0m      
+  
+remote: [31mOffending 
+files:[0m        
+remote: [31m  - 
+5omDnw90dVo.webm (ref: 
+refs/heads/main)[0m   
+     
+remote: [31m----------
+-----------------------
+-----------------------
+-----------------[0m  
+      
+To https://huggingface.
+co/spaces/AndrexDurex/b
+ioagent
+ ! [remote rejected] 
+master -> main 
+(pre-receive hook 
+declined)
+error: failed to push 
+some refs to 'https://h
+uggingface.co/spaces/An
+drexDurex/bioagent'

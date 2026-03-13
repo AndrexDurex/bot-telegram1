@@ -213,6 +213,11 @@ async def cmd_checkin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await scheduler.fire_evening_checkin_now()
 
 
+async def cmd_ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Comando de diagnóstico rápido."""
+    await update.message.reply_text("🏓 ¡Pong! El bot está vivo y escuchando.")
+
+
 # ── Bootstrap ─────────────────────────────────────────────────────────────────
 def run() -> None:
     """Punto de entrada principal del bot."""
@@ -225,13 +230,18 @@ def run() -> None:
 
     # Indexar knowledge base al arrancar (async, sin bloquear el bot)
     async def _post_init(application):
-        # RAG
-        logger.info("🧠 Iniciando indexación RAG en segundo plano...")
-        n = await rag.build_index_async()
-        if n > 0:
-            logger.info(f"✅ RAG listo: {n} chunks indexados.")
-        else:
-            logger.warning("⚠️ RAG no disponible.")
+        logger.info("⚡ Iniciando post_init...")
+        # RAG - Lo lanzamos como tarea para que NO bloquee el polling
+        async def _background_rag():
+            logger.info("🧠 Iniciando indexación RAG en segundo plano...")
+            n = await rag.build_index_async()
+            if n > 0:
+                logger.info(f"✅ RAG listo: {n} chunks indexados.")
+            else:
+                logger.warning("⚠️ RAG no disponible.")
+        
+        asyncio.create_task(_background_rag())
+        
         # Scheduler de proactividad
         scheduler.init_scheduler(application)
         logger.info("✅ Scheduler de proactividad activo.")
@@ -247,6 +257,7 @@ def run() -> None:
     app.add_handler(CommandHandler("tareas", cmd_tareas))
     app.add_handler(CommandHandler("brief", cmd_brief))
     app.add_handler(CommandHandler("checkin", cmd_checkin))
+    app.add_handler(CommandHandler("ping", cmd_ping))
 
     # Mensajes de texto
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
