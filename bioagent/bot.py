@@ -22,14 +22,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Gemini setup ──────────────────────────────────────────────────────────────
-import google.generativeai as genai
-
-genai.configure(api_key=GEMINI_API_KEY)
-_gemini_model = genai.GenerativeModel(
-    model_name=GEMINI_MODEL,
-    system_instruction=SYSTEM_PROMPT,
-)
+# Motor de Gemini (se inicializa en run())
+_gemini_model = None
 
 # Historial en memoria (fallback si Firebase no está disponible)
 _conversation_history: dict[int, list] = {}
@@ -152,6 +146,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     )
 
     try:
+        # Inicializar modelo si no existe
+        global _gemini_model
+        if _gemini_model is None:
+            import google.generativeai as genai
+            genai.configure(api_key=GEMINI_API_KEY)
+            _gemini_model = genai.GenerativeModel(
+                model_name=GEMINI_MODEL,
+                system_instruction=SYSTEM_PROMPT,
+            )
+
         # 🔍 RAG: buscar contexto relevante del Dr. La Rosa
         rag_context = await asyncio.to_thread(rag.search, user_text)
 
@@ -221,12 +225,16 @@ async def cmd_ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # ── Bootstrap ─────────────────────────────────────────────────────────────────
 def run() -> None:
     """Punto de entrada principal del bot."""
+    logger.info("🛠️ Iniciando secuencia de arranque de BioAgent...")
+    
     if not TELEGRAM_BOT_TOKEN:
-        raise ValueError("❌ TELEGRAM_BOT_TOKEN no está configurado en el .env")
+        logger.error("❌ TELEGRAM_BOT_TOKEN no está configurado!")
+        return
     if not GEMINI_API_KEY:
-        raise ValueError("❌ GEMINI_API_KEY no está configurado en el .env")
+        logger.error("❌ GEMINI_API_KEY no está configurado!")
+        return
 
-    logger.info(f"🚀 {BOT_NAME} iniciado. Escuchando mensajes...")
+    logger.info(f"🚀 {BOT_NAME}: Configuración validada. Preparando aplicación...")
 
     # Indexar knowledge base al arrancar (async, sin bloquear el bot)
     async def _post_init(application):
