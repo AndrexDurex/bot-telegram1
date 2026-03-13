@@ -254,7 +254,7 @@ def run() -> None:
         scheduler.init_scheduler(application)
         logger.info("✅ Scheduler de proactividad activo.")
 
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(_post_init).build()
+    app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(_post_init).get_updates_retries(5).bootstrap_retries(5).build()
 
     # Comandos
     app.add_handler(CommandHandler("start", cmd_start))

@@ -5,20 +5,20 @@ import socket
 from dotenv import load_dotenv
 from bioagent.startup import prepare_credentials
 
-# --- DNS WORKAROUND V4.0 (Host Swapping) ---
-# Hugging Face a veces falla resolviendo api.telegram.org.
-# Forzamos la resolución a la IP estable de Telegram.
+# --- DNS WORKAROUND V5.0 (IPv4 Priority) ---
+# Hugging Face a veces falla con IPv6 para api.telegram.org.
+# Forzamos la resolución a IPv4. Es "menos agresivo" que hardcodear IPs.
 if not hasattr(socket, "_orig_getaddrinfo"):
     socket._orig_getaddrinfo = socket.getaddrinfo
     
-    def _patched_getaddrinfo(host, port, *args, **kwargs):
+    def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
         if host == "api.telegram.org":
-            # IP conocida de Telegram (Moscú/Europa)
-            return socket._orig_getaddrinfo("149.154.167.220", port, *args, **kwargs)
-        return socket._orig_getaddrinfo(host, port, *args, **kwargs)
+            # Forzar IPv4 (AF_INET)
+            return socket._orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+        return socket._orig_getaddrinfo(host, port, family, type, proto, flags)
     
     socket.getaddrinfo = _patched_getaddrinfo
-    print("--- [WORKAROUND] DNS Host-Swap V4.0 ACTIVADO (api.telegram.org -> 149.154.167.220) ---", flush=True)
+    print("--- [WORKAROUND] DNS IPv4 Priority V5.0 ACTIVADO (api.telegram.org -> AF_INET) ---", flush=True)
 
 # Si Hugging Face espera que abramos un puerto (FastAPI/Gradio), le daremos un 
 # pequeño servidor dummy de salud para que no mate el contenedor por timeout.
