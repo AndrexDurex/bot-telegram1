@@ -254,7 +254,7 @@ def run() -> None:
         scheduler.init_scheduler(application)
         logger.info("✅ Scheduler de proactividad activo.")
 
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(_post_init).get_updates_retries(5).bootstrap_retries(5).build()
+    app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(_post_init).build()
 
     # Comandos
     app.add_handler(CommandHandler("start", cmd_start))
@@ -274,7 +274,7 @@ def run() -> None:
     app.add_error_handler(error_handler)
 
     logger.info(f"🚀 {BOT_NAME} iniciado. Escuchando mensajes...")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    app.run_polling(allowed_updates=Update.ALL_TYPES, bootstrap_retries=5)
 
 
 if __name__ == "__main__":
