@@ -5,20 +5,24 @@ import socket
 from dotenv import load_dotenv
 from bioagent.startup import prepare_credentials
 
-# --- DNS WORKAROUND V5.0 (IPv4 Priority) ---
-# Hugging Face a veces falla con IPv6 para api.telegram.org.
-# Forzamos la resolución a IPv4. Es "menos agresivo" que hardcodear IPs.
+# --- DNS WORKAROUND V6.0 (Automatic Fallback) ---
+# Intentamos resolución normal, y si falla para Telegram, usamos la IP de respaldo.
+# Es el punto medio perfecto entre "agresivo" y "funcional".
 if not hasattr(socket, "_orig_getaddrinfo"):
     socket._orig_getaddrinfo = socket.getaddrinfo
     
     def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-        if host == "api.telegram.org":
-            # Forzar IPv4 (AF_INET)
+        try:
+            # Intentamos la resolución normal (forzando IPv4 para evitar líos)
             return socket._orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-        return socket._orig_getaddrinfo(host, port, family, type, proto, flags)
+        except Exception:
+            if host == "api.telegram.org":
+                # Si falló la DNS, aplicamos el "paracaídas" con la IP conocida
+                return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('149.154.167.220', port))]
+            raise
     
     socket.getaddrinfo = _patched_getaddrinfo
-    print("--- [WORKAROUND] DNS IPv4 Priority V5.0 ACTIVADO (api.telegram.org -> AF_INET) ---", flush=True)
+    print("--- [WORKAROUND] DNS Fallback V6.0 ACTIVADO (api.telegram.org -> Auto-Rescue) ---", flush=True)
 
 # Si Hugging Face espera que abramos un puerto (FastAPI/Gradio), le daremos un 
 # pequeño servidor dummy de salud para que no mate el contenedor por timeout.
