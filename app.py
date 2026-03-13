@@ -70,5 +70,11 @@ if __name__ == "__main__":
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
     
+    # Correr diagnóstico de red
+    try:
+        import diag_net
+    except Exception as e:
+        print(f"⚠️ No se pudo correr el diagnóstico: {e}", flush=True)
+
     # 4. Arrancamos el bot en el hilo principal (REQUERIDO para señales de sistema)
     run_bot()
