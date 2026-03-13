@@ -9,8 +9,10 @@ if not hasattr(socket, "_orig_getaddrinfo"):
     socket._orig_getaddrinfo = socket.getaddrinfo
     
     def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-        # logging minimal para no saturar pero confirmar que funciona
-        if "telegram" in host:
+        # anyio/asyncio a veces pasan host como bytes. Normalizamos a str.
+        host_str = host.decode("utf-8") if isinstance(host, bytes) else str(host)
+        
+        if "telegram" in host_str:
             try:
                 # Intentamos resolución IPv4 (AF_INET es fundamental en HF)
                 return socket._orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
