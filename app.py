@@ -1,36 +1,36 @@
-import os
-import sys
-import logging
 import socket
-from dotenv import load_dotenv
-from bioagent.startup import prepare_credentials
+import sys
+import os
 
-# --- DNS WORKAROUND V6.0 (Automatic Fallback) ---
-# Intentamos resolución normal, y si falla para Telegram, usamos la IP de respaldo.
-# Es el punto medio perfecto entre "agresivo" y "funcional".
+# --- [URGENTE] DNS WORKAROUND V7.0 (Top-Level Patch) ---
+# Se aplica ANTES de cualquier otro import para asegurar que todas las librerías 
+# (httpx, httpcore, etc.) usen la versión parcheada.
 if not hasattr(socket, "_orig_getaddrinfo"):
     socket._orig_getaddrinfo = socket.getaddrinfo
     
     def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-        try:
-            # Intentamos la resolución normal (forzando IPv4 para evitar líos)
-            return socket._orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-        except Exception:
-            if host == "api.telegram.org":
-                # Si falló la DNS, aplicamos el "paracaídas" con la IP conocida
-                return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('149.154.167.220', port))]
-            raise
+        # logging minimal para no saturar pero confirmar que funciona
+        if "telegram" in host:
+            try:
+                # Intentamos resolución IPv4 (AF_INET es fundamental en HF)
+                return socket._orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+            except Exception as e:
+                print(f"⚠️ [DNS Fallback] Falló resolución para {host}: {e}. Usando IP de rescate.", flush=True)
+                # El 'Rescue' con la IP oficial de Telegram (149.154.167.220)
+                # El puerto debe ser int en el addr de AF_INET
+                return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('149.154.167.220', int(port)))]
+        return socket._orig_getaddrinfo(host, port, family, type, proto, flags)
     
     socket.getaddrinfo = _patched_getaddrinfo
-    print("--- [WORKAROUND] DNS Fallback V6.0 ACTIVADO (api.telegram.org -> Auto-Rescue) ---", flush=True)
+    print("--- [WORKAROUND] DNS Fallback V7.0 ACTIVADO (api.telegram.org -> Auto-Rescue) ---", flush=True)
 
-# Si Hugging Face espera que abramos un puerto (FastAPI/Gradio), le daremos un 
-# pequeño servidor dummy de salud para que no mate el contenedor por timeout.
-# Y ejecutamos el bot de Telegram en un hilo en segundo plano.
-
+import logging
 import threading
 import uvicorn
 from fastapi import FastAPI
+from dotenv import load_dotenv
+from bioagent.startup import prepare_credentials
+from diag_net import run_diagnostic
 
 app = FastAPI(title="BioAgent Health Check")
 
@@ -39,14 +39,10 @@ def health_check():
     return {"status": "ok", "bot": "running"}
 
 def run_server():
-    """Ejecuta el servidor FastAPI en un hilo secundario."""
     print("--- INICIANDO SERVIDOR HEALTHCHECK EN HILO SECUNDARIO ---", flush=True)
-    # Usamos la instancia 'app' directamente aquí ya que 'app:app' 
-    # a veces da problemas en hilos secundarios con uvicorn.
     uvicorn.run(app, host="0.0.0.0", port=7860, log_level="warning")
 
 def run_bot():
-    """Ejecuta el bot en el hilo principal."""
     print("--- INICIANDO BOT DE TELEGRAM (HILO PRINCIPAL) ---", flush=True)
     from bioagent.bot import run
     try:
@@ -55,30 +51,28 @@ def run_bot():
         print(f"❌ ERROR CRÍTICO EN EL BOT: {e}", flush=True)
 
 if __name__ == "__main__":
-    # 1. Cargar variables de entorno (especialmente importante en local)
     load_dotenv()
-
-    # Diagnóstico de variables críticas (enmascaradas)
+    
+    # Diagnóstico de variables críticas
     print("--- DIAGNÓSTICO DE ENTORNO ---", flush=True)
     for var in ["TELEGRAM_BOT_TOKEN", "GEMINI_API_KEY", "FIREBASE_RTDB_URL", "OWNER_CHAT_ID"]:
         val = os.getenv(var, "")
         masked = val[:4] + "..." + val[-4:] if len(val) > 8 else ("Configurado" if val else "FALTANTE")
         print(f"🔍 {var}: {masked}", flush=True)
 
-    # 2. Restaurar credenciales desde secrets si estamos en producción
+    # Correr diagnóstico de red completo
+    try:
+        run_diagnostic()
+    except Exception as e:
+        print(f"⚠️ Error en diagnóstico: {e}", flush=True)
+
+    # Preparar credenciales
     print("--- PREPARANDO CREDENCIALES ---", flush=True)
     prepare_credentials()
     
-    # 3. Arrancamos el servidor dummy en un hilo secundario (demonio)
-    # Lo ponemos como demonio para que si el bot muere, el proceso termine.
+    # Iniciar servidor healthcheck
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
     
-    # Correr diagnóstico de red
-    try:
-        import diag_net
-    except Exception as e:
-        print(f"⚠️ No se pudo correr el diagnóstico: {e}", flush=True)
-
-    # 4. Arrancamos el bot en el hilo principal (REQUERIDO para señales de sistema)
+    # Iniciar bot
     run_bot()
