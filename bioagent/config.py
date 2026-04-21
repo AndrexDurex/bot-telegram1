@@ -7,9 +7,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── Telegram ──────────────────────────────────────────────────────────────────
-TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
-OWNER_CHAT_ID: int = int(os.getenv("OWNER_CHAT_ID", "0"))  # Solo este user puede usar el bot
+# ── WhatsApp Cloud API ────────────────────────────────────────────────────────
+WHATSAPP_TOKEN: str = os.getenv("WHATSAPP_TOKEN", "")
+WHATSAPP_PHONE_ID: str = os.getenv("WHATSAPP_PHONE_ID", "")
+WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
+OWNER_PHONE_NUMBER: str = os.getenv("OWNER_PHONE_NUMBER", "") # Obligatorio para restringir acceso
 
 # ── Gemini / Google AI ────────────────────────────────────────────────────────
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
@@ -32,7 +34,7 @@ CHROMA_PERSIST_DIR: str = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
 CHROMA_COLLECTION: str = "bioagent_knowledge"
 
 # ── Personalidad del bot ──────────────────────────────────────────────────────
-BOT_NAME: str = "BioAgent"
+BOT_NAME: str = "PokeBot"
 SYSTEM_PROMPT: str = """
 Eres BioAgent, el asistente personal de André. Eres su mano derecha: inteligente,
 directo, empático y orientado a resultados. Tu trabajo es ayudarle a vivir mejor en

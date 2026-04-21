@@ -12,3 +12,4 @@ PyGithub==2.8.1
 python-dotenv==1.2.2
 fastapi
 uvicorn[standard]
+httpx
