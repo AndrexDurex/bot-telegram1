@@ -93,9 +93,35 @@ async def process_whatsapp_message(body: Dict[str, Any]) -> None:
     except Exception as e:
         logger.error(f"❌ Error procesando webhook de WhatsApp: {e}")
 
+import contextvars
+_current_user_id = contextvars.ContextVar('current_user_id')
+
+def add_task_tool(title: str, priority: str = "media", category: str = "general") -> str:
+    """
+    Crea una nueva tarea pendiente para el usuario y la guarda en su base de datos.
+    Usa esta herramienta SIEMPRE que el usuario te pida agregar una tarea, anotar algo pendiente o recordar algo.
+    
+    Args:
+        title: El título o descripción concisa de la tarea.
+        priority: Nivel de prioridad de la tarea. Opciones válidas: "alta", "media" o "baja".
+        category: Categoría de la tarea. Opciones recomendadas: "salud", "tesis", "general".
+    """
+    try:
+        user_id = _current_user_id.get()
+        result = tasks.add_task(user_id, title=title, priority=priority, category=category)
+        if result:
+            return f"Tarea '{title}' agregada exitosamente con ID {result}"
+        return "Error al agregar tarea en Firebase."
+    except Exception as e:
+        return f"Error interno de Python: {e}"
+
 async def handle_ai_response(user_number: str, user_text: str) -> None:
     """Invoca la inteligencia y envía de vuelta a WhatsApp."""
     global _gemini_model
+    
+    # Tratar user_number como identifier para la memoria
+    user_id = user_number 
+    _current_user_id.set(user_id)
     
     try:
         # Inicializar modelo
@@ -105,10 +131,8 @@ async def handle_ai_response(user_number: str, user_text: str) -> None:
             _gemini_model = genai.GenerativeModel(
                 model_name=GEMINI_MODEL,
                 system_instruction=SYSTEM_PROMPT,
+                tools=[add_task_tool]
             )
-
-        # Tratar user_number como identifier para la memoria
-        user_id = user_number 
 
         # 1. Recuperar memoria (Firebase)
         firebase_history = await asyncio.to_thread(memory.build_gemini_history, user_id)
@@ -128,8 +152,13 @@ async def handle_ai_response(user_number: str, user_text: str) -> None:
         enriched_prompt = "\n\n".join(parts)
 
         # 3. Invocar Gemini
-        chat = _gemini_model.start_chat(history=history)
-        response = await asyncio.to_thread(chat.send_message, enriched_prompt)
+        chat = _gemini_model.start_chat(
+            history=history,
+            enable_automatic_function_calling=True
+        )
+        response = await asyncio.to_thread(
+            lambda: chat.send_message(enriched_prompt)
+        )
         bot_reply = response.text
 
         # 4. Guardar historiales
