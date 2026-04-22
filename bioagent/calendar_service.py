@@ -143,6 +143,7 @@ def delete_event(event_id: str) -> bool:
 def get_agenda_summary(days: int = 7) -> str:
     """
     Retorna un texto con el resumen de la agenda para inyectar al prompt.
+    Incluye el ID del evento para que Gemini pueda modificarlo o borrarlo.
     """
     events = get_upcoming_events(days=days)
     if not events:
@@ -151,7 +152,11 @@ def get_agenda_summary(days: int = 7) -> str:
     lines = [f"📅 **Agenda próximos {days} días:**\n"]
     for e in events:
         start = e["start"].replace("T", " ").split("+")[0][:16]
-        lines.append(f"• {start} — {e['title']}")
+        end = e["end"].replace("T", " ").split("+")[0][11:16] if "T" in e["end"] else ""
+        event_id = e.get("id", "sin-id")
+        
+        time_str = f"{start} a {end}" if end else start
+        lines.append(f"• {time_str} — {e['title']} (ID: {event_id})")
         if e["description"]:
             lines.append(f"  _{e['description'][:80]}_")
 

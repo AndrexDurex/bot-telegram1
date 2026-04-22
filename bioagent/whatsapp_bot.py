@@ -142,6 +142,44 @@ def mark_item_done_tool(item_id: str) -> str:
     except Exception as e:
         return f"Error interno: {e}"
 
+def add_calendar_event_tool(title: str, start_iso: str, end_iso: str, description: str = "", color_id: str = None) -> str:
+    """
+    Crea un bloque de tiempo (evento) en el Google Calendar del usuario.
+    Úsalo para agendar rutinas, citas médicas, bloques de Tesis o recordatorios precisos.
+    Si hay conflicto de horarios, debes eliminar o reprogramar el evento anterior si la Tesis tiene prioridad.
+    
+    Args:
+        title: Título del evento (ej: "Entrenamiento de Fuerza").
+        start_iso: Fecha y hora de inicio en formato ISO (ej: "2026-04-22T10:00:00"). Debe ser zona horaria local.
+        end_iso: Fecha y hora de fin en formato ISO (ej: "2026-04-22T11:00:00").
+        description: Detalles del evento, rutinas a seguir, listas de compras, etc.
+        color_id: ID de color opcional ('1'=Lavanda, '4'=Rosa, '8'=Grafito, '11'=Tomate). Usa tomates para la Tesis.
+    """
+    try:
+        # calendar_service ya es síncrono internamente para create_event
+        created = calendar_service.create_event(title, start_iso, end_iso, description, color_id)
+        if created:
+            return f"Evento '{title}' creado exitosamente el {start_iso}."
+        return "Error al crear el evento en Google Calendar."
+    except Exception as e:
+        return f"Error interno de Calendar: {e}"
+
+def delete_calendar_event_tool(event_id: str) -> str:
+    """
+    Elimina un evento de Google Calendar usando su ID.
+    Úsalo cuando el usuario cancele un evento o cuando necesites mover un bloque de tiempo por conflicto (lo borras y lo creas de nuevo).
+    
+    Args:
+        event_id: El ID del evento (se te proporciona en el resumen de la agenda).
+    """
+    try:
+        success = calendar_service.delete_event(event_id)
+        if success:
+            return f"Evento {event_id} eliminado exitosamente."
+        return "Error al eliminar el evento de Google Calendar."
+    except Exception as e:
+        return f"Error interno de Calendar: {e}"
+
 async def handle_ai_response(user_number: str, user_text: str) -> None:
     """Invoca la inteligencia y envía de vuelta a WhatsApp."""
     global _gemini_model
@@ -158,7 +196,7 @@ async def handle_ai_response(user_number: str, user_text: str) -> None:
             _gemini_model = genai.GenerativeModel(
                 model_name=GEMINI_MODEL,
                 system_instruction=SYSTEM_PROMPT,
-                tools=[add_item_tool, mark_item_done_tool]
+                tools=[add_item_tool, mark_item_done_tool, add_calendar_event_tool, delete_calendar_event_tool]
             )
 
         # 1. Recuperar memoria (Firebase)
