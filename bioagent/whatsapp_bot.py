@@ -55,17 +55,20 @@ async def send_whatsapp_message(to_number: str, text: str) -> None:
         "text": {"body": text}
     }
     
-    client = get_whatsapp_client()
     max_retries = 3
     
     for attempt in range(max_retries):
+        client = get_whatsapp_client()
         try:
             response = await client.post(url, headers=headers, json=payload)
             response.raise_for_status()
             logger.info(f"✅ Mensaje enviado exitosamente a {to_number}")
             return # Salir si fue exitoso
         except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.WriteTimeout, httpx.PoolTimeout):
-            logger.warning(f"⚠️ Timeout con Meta (intento {attempt+1}/{max_retries}). Reintentando...")
+            logger.warning(f"⚠️ Timeout con Meta (intento {attempt+1}/{max_retries}). Destruyendo cliente y reintentando...")
+            # Destruir el cliente para forzar una nueva conexión TCP limpia
+            global _whatsapp_client
+            _whatsapp_client = None
             await asyncio.sleep(2)
         except httpx.HTTPStatusError as e:
             logger.error(f"❌ Error al enviar mensaje WhatsApp: {e.response.text}")
