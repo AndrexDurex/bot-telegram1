@@ -10,6 +10,7 @@ from bioagent.config import WHATSAPP_VERIFY_TOKEN
 from bioagent.startup import prepare_credentials
 from bioagent.whatsapp_bot import process_whatsapp_message
 from bioagent import rag
+from bioagent import proactive
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -26,6 +27,9 @@ async def startup_event():
     
     logger.info("🧠 Iniciando indexación RAG en segundo plano...")
     asyncio.create_task(rag.build_index_async())
+    
+    logger.info("🤖 Arrancando Motor Proactivo...")
+    asyncio.create_task(proactive.proactive_loop())
 
 @app.get("/")
 def health_check():
