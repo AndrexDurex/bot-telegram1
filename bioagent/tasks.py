@@ -129,18 +129,34 @@ def format_tasks_list(tasks: list[dict]) -> str:
 
 
 def get_tasks_summary(user_id: int) -> str:
-    """Resumen de tareas para inyectar en el prompt de Gemini."""
+    """Resumen de tareas/listas para inyectar en el prompt de Gemini."""
     tasks = get_tasks(user_id, only_pending=True)
     if not tasks:
         return ""
-    lines = ["## Tareas pendientes del usuario:"]
-    for t in tasks[:8]:  # máximo 8 para no saturar el prompt
-        priority = t.get("priority", "media")
-        title = t.get("title", "")
-        due = t.get("due_date", "")
-        cat = t.get("category", "general")
-        line = f"- [{priority}] {title} (cat: {cat})"
-        if due:
-            line += f" vence: {due}"
-        lines.append(line)
+        
+    # Agrupar por categoría (nombre de la lista)
+    grouped = {}
+    for t in tasks:
+        cat = t.get("category", "general").upper()
+        if cat not in grouped:
+            grouped[cat] = []
+        grouped[cat].append(t)
+        
+    lines = ["## Tareas y Listas Pendientes del Usuario:"]
+    for cat, items in grouped.items():
+        lines.append(f"\n### Lista: {cat}")
+        for t in items[:15]:  # Mostrar hasta 15 ítems por lista
+            priority = t.get("priority", "media")
+            title = t.get("title", "")
+            due = t.get("due_date", "")
+            task_id = t.get("id", "")
+            
+            line = f"- [{priority}] {title} (ID: {task_id})"
+            if due:
+                line += f" | Vence: {due}"
+            lines.append(line)
+            
+        if len(items) > 15:
+            lines.append(f"- ... y {len(items)-15} ítems más.")
+            
     return "\n".join(lines)

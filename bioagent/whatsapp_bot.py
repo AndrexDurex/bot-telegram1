@@ -105,24 +105,42 @@ async def process_whatsapp_message(body: Dict[str, Any]) -> None:
 import contextvars
 _current_user_id = contextvars.ContextVar('current_user_id')
 
-def add_task_tool(title: str, priority: str = "media", category: str = "general") -> str:
+def add_item_tool(title: str, priority: str = "media", category: str = "general") -> str:
     """
-    Crea una nueva tarea pendiente para el usuario y la guarda en su base de datos.
-    Usa esta herramienta SIEMPRE que el usuario te pida agregar una tarea, anotar algo pendiente o recordar algo.
+    Agrega una tarea o un ítem a una lista en la base de datos del usuario.
+    Usa esta herramienta cuando te pidan anotar algo pendiente, agregar algo a la lista de compras, etc.
     
     Args:
-        title: El título o descripción concisa de la tarea.
-        priority: Nivel de prioridad de la tarea. Opciones válidas: "alta", "media" o "baja".
-        category: Categoría de la tarea. Opciones recomendadas: "salud", "tesis", "general".
+        title: El título de la tarea o ítem a comprar.
+        priority: Nivel de prioridad ("alta", "media" o "baja").
+        category: El nombre de la lista o categoría. Ej: "compras_casa", "compras_super", "tesis", "general". 
+                  Si es una lista nueva, simplemente inventa un nombre de categoría descriptivo.
     """
     try:
         user_id = _current_user_id.get()
         result = tasks.add_task(user_id, title=title, priority=priority, category=category)
         if result:
-            return f"Tarea '{title}' agregada exitosamente con ID {result}"
-        return "Error al agregar tarea en Firebase."
+            return f"Ítem '{title}' agregado a la lista '{category}' con ID {result}"
+        return "Error al agregar en Firebase."
     except Exception as e:
-        return f"Error interno de Python: {e}"
+        return f"Error interno: {e}"
+
+def mark_item_done_tool(item_id: str) -> str:
+    """
+    Marca una tarea o ítem de una lista como completado/comprado usando su ID.
+    Usa esta herramienta cuando el usuario te indique que ya hizo una tarea o compró un ítem.
+    
+    Args:
+        item_id: El ID único del ítem (se te proporciona en el resumen de tareas).
+    """
+    try:
+        user_id = _current_user_id.get()
+        success = tasks.complete_task(user_id, item_id)
+        if success:
+            return f"Ítem {item_id} marcado como completado."
+        return f"Error: No se encontró el ítem {item_id} o no se pudo completar."
+    except Exception as e:
+        return f"Error interno: {e}"
 
 async def handle_ai_response(user_number: str, user_text: str) -> None:
     """Invoca la inteligencia y envía de vuelta a WhatsApp."""
@@ -140,7 +158,7 @@ async def handle_ai_response(user_number: str, user_text: str) -> None:
             _gemini_model = genai.GenerativeModel(
                 model_name=GEMINI_MODEL,
                 system_instruction=SYSTEM_PROMPT,
-                tools=[add_task_tool]
+                tools=[add_item_tool, mark_item_done_tool]
             )
 
         # 1. Recuperar memoria (Firebase)
