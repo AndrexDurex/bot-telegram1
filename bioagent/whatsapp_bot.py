@@ -46,13 +46,14 @@ async def send_whatsapp_message(to_number: str, text: str) -> None:
     
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(url, headers=headers, json=payload, timeout=10.0)
+            response = await client.post(url, headers=headers, json=payload, timeout=30.0)
             response.raise_for_status()
             logger.info(f"✅ Mensaje enviado exitosamente a {to_number}")
         except httpx.HTTPStatusError as e:
             logger.error(f"❌ Error al enviar mensaje WhatsApp: {e.response.text}")
         except Exception as e:
-            logger.error(f"❌ Excepción enviando WhatsApp: {e}")
+            import traceback
+            logger.error(f"❌ Excepción enviando WhatsApp: {e}\n{traceback.format_exc()}")
 
 async def process_whatsapp_message(body: Dict[str, Any]) -> None:
     """Procesa el JSON entrante del webhook de WhatsApp."""
