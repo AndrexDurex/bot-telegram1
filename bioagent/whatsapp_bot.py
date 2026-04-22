@@ -22,22 +22,6 @@ _gemini_model = None
 # Historial en memoria (fallback)
 _conversation_history: dict[str, list] = {}
 
-# Cache de IP resuelta para graph.facebook.com
-_graph_ip = None
-
-def _resolve_graph_ip() -> str:
-    """Resuelve graph.facebook.com a una dirección IPv4 concreta."""
-    global _graph_ip
-    if _graph_ip is None:
-        try:
-            infos = socket.getaddrinfo("graph.facebook.com", 443, socket.AF_INET, socket.SOCK_STREAM)
-            _graph_ip = infos[0][4][0]
-            logger.info(f"🌐 graph.facebook.com resuelto a IPv4: {_graph_ip}")
-        except Exception as e:
-            logger.error(f"❌ No se pudo resolver graph.facebook.com: {e}")
-            _graph_ip = None
-    return _graph_ip
-
 async def send_whatsapp_message(to_number: str, text: str) -> None:
     """Envía un mensaje de texto a través de WhatsApp Cloud API.
     Usa aiohttp con resolución DNS forzada a IPv4 y connector fresco por intento."""
@@ -45,22 +29,11 @@ async def send_whatsapp_message(to_number: str, text: str) -> None:
         logger.error("❌ Faltan credenciales de WhatsApp.")
         return
 
-    # Resolver IPv4 una sola vez
-    ip = _resolve_graph_ip()
-    if ip:
-        url = f"https://{ip}/v19.0/{WHATSAPP_PHONE_ID}/messages"
-        headers = {
-            "Authorization": f"Bearer {WHATSAPP_TOKEN}",
-            "Content-Type": "application/json",
-            "Host": "graph.facebook.com",  # Header Host necesario cuando usamos IP directa
-        }
-    else:
-        # Fallback: usar hostname normal
-        url = f"https://graph.facebook.com/v19.0/{WHATSAPP_PHONE_ID}/messages"
-        headers = {
-            "Authorization": f"Bearer {WHATSAPP_TOKEN}",
-            "Content-Type": "application/json",
-        }
+    url = f"https://graph.facebook.com/v19.0/{WHATSAPP_PHONE_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json",
+    }
 
     text = text.replace("**", "*")
     
@@ -74,12 +47,13 @@ async def send_whatsapp_message(to_number: str, text: str) -> None:
     max_retries = 3
     
     for attempt in range(max_retries):
-        # Crear connector y session FRESCOS en cada intento para evitar conexiones muertas
+        # Connector FRESCO en cada intento: fuerza IPv4 via family=AF_INET
+        # Esto hace que aiohttp resuelva DNS internamente pero SOLO a IPv4
+        # El hostname se mantiene en la URL para que TLS valide el certificado correctamente
         connector = aiohttp.TCPConnector(
-            family=socket.AF_INET,
-            ssl=True,          # TLS obligatorio
-            limit=1,           # Solo necesitamos 1 conexión
-            force_close=True,  # Cerrar conexión después de usarla
+            family=socket.AF_INET,  # Solo IPv4
+            limit=1,
+            force_close=True,
         )
         timeout = aiohttp.ClientTimeout(total=15.0)
         
@@ -89,17 +63,12 @@ async def send_whatsapp_message(to_number: str, text: str) -> None:
                     body = await response.text()
                     if response.status >= 400:
                         logger.error(f"❌ WhatsApp API error ({response.status}): {body}")
-                        return  # Error de API, no reintentar
+                        return
                     logger.info(f"✅ Mensaje enviado exitosamente a {to_number}")
                     return
         except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
             logger.warning(f"⚠️ Fallo red ({e.__class__.__name__}) intento {attempt+1}/{max_retries}")
-            # Invalidar IP cacheada por si cambió
-            if attempt == 1:
-                global _graph_ip
-                _graph_ip = None
-                _resolve_graph_ip()
-            await asyncio.sleep(2 * (attempt + 1))  # Backoff: 2s, 4s, 6s
+            await asyncio.sleep(2 * (attempt + 1))
         except Exception as e:
             import traceback
             logger.error(f"❌ Excepción enviando WhatsApp: {e}\n{traceback.format_exc()}")
