@@ -44,16 +44,25 @@ async def send_whatsapp_message(to_number: str, text: str) -> None:
         "text": {"body": text}
     }
     
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(url, headers=headers, json=payload, timeout=30.0)
-            response.raise_for_status()
-            logger.info(f"✅ Mensaje enviado exitosamente a {to_number}")
-        except httpx.HTTPStatusError as e:
-            logger.error(f"❌ Error al enviar mensaje WhatsApp: {e.response.text}")
-        except Exception as e:
-            import traceback
-            logger.error(f"❌ Excepción enviando WhatsApp: {e}\n{traceback.format_exc()}")
+    max_retries = 3
+    for attempt in range(max_retries):
+        # Usamos timeout más corto pero con reintentos para saltar IPs bloqueadas rápidamente
+        async with httpx.AsyncClient(limits=httpx.Limits(max_keepalive_connections=0)) as client:
+            try:
+                response = await client.post(url, headers=headers, json=payload, timeout=15.0)
+                response.raise_for_status()
+                logger.info(f"✅ Mensaje enviado exitosamente a {to_number}")
+                return # Salir si fue exitoso
+            except (httpx.ConnectTimeout, httpx.ReadTimeout):
+                logger.warning(f"⚠️ Timeout con Meta (intento {attempt+1}/{max_retries}). Reintentando...")
+                await asyncio.sleep(1)
+            except httpx.HTTPStatusError as e:
+                logger.error(f"❌ Error al enviar mensaje WhatsApp: {e.response.text}")
+                return
+            except Exception as e:
+                import traceback
+                logger.error(f"❌ Excepción enviando WhatsApp: {e}\n{traceback.format_exc()}")
+                return
 
 async def process_whatsapp_message(body: Dict[str, Any]) -> None:
     """Procesa el JSON entrante del webhook de WhatsApp."""
