@@ -1,6 +1,6 @@
 # BioAgent — Dependencias de producción
 python-telegram-bot==22.1
-google-generativeai
+google-genai
 firebase-admin==7.2.0
 google-api-python-client
 google-auth-oauthlib
@@ -13,3 +13,4 @@ python-dotenv==1.2.2
 fastapi
 uvicorn[standard]
 httpx
+aiohttp

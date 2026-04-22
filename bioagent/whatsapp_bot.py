@@ -4,7 +4,8 @@ Motor de conversación con Gemini 2.5 Flash + memoria + RAG, adaptado para recib
 """
 import asyncio
 import logging
-import httpx
+import socket
+import aiohttp
 from typing import Dict, Any
 
 from bioagent.config import (
@@ -21,31 +22,46 @@ _gemini_model = None
 # Historial en memoria (fallback)
 _conversation_history: dict[str, list] = {}
 
-_whatsapp_client = None
+# Cache de IP resuelta para graph.facebook.com
+_graph_ip = None
 
-def get_whatsapp_client():
-    global _whatsapp_client
-    if _whatsapp_client is None:
-        # Forzar IPv4 para evitar timeouts de IPv6 en Hugging Face
-        transport = httpx.AsyncHTTPTransport(local_address="0.0.0.0")
-        # Mantener las conexiones vivas (Keep-Alive) para no negociar TLS en cada mensaje
-        limits = httpx.Limits(max_keepalive_connections=10, max_connections=10)
-        _whatsapp_client = httpx.AsyncClient(transport=transport, limits=limits, timeout=20.0)
-    return _whatsapp_client
+def _resolve_graph_ip() -> str:
+    """Resuelve graph.facebook.com a una dirección IPv4 concreta."""
+    global _graph_ip
+    if _graph_ip is None:
+        try:
+            infos = socket.getaddrinfo("graph.facebook.com", 443, socket.AF_INET, socket.SOCK_STREAM)
+            _graph_ip = infos[0][4][0]
+            logger.info(f"🌐 graph.facebook.com resuelto a IPv4: {_graph_ip}")
+        except Exception as e:
+            logger.error(f"❌ No se pudo resolver graph.facebook.com: {e}")
+            _graph_ip = None
+    return _graph_ip
 
 async def send_whatsapp_message(to_number: str, text: str) -> None:
-    """Envía un mensaje de texto a través de WhatsApp Cloud API."""
+    """Envía un mensaje de texto a través de WhatsApp Cloud API.
+    Usa aiohttp con resolución DNS forzada a IPv4 y connector fresco por intento."""
     if not WHATSAPP_TOKEN or not WHATSAPP_PHONE_ID:
         logger.error("❌ Faltan credenciales de WhatsApp.")
         return
 
-    url = f"https://graph.facebook.com/v19.0/{WHATSAPP_PHONE_ID}/messages"
-    headers = {
-        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    
-    # Adaptar formato markdown a WhatsApp
+    # Resolver IPv4 una sola vez
+    ip = _resolve_graph_ip()
+    if ip:
+        url = f"https://{ip}/v19.0/{WHATSAPP_PHONE_ID}/messages"
+        headers = {
+            "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+            "Content-Type": "application/json",
+            "Host": "graph.facebook.com",  # Header Host necesario cuando usamos IP directa
+        }
+    else:
+        # Fallback: usar hostname normal
+        url = f"https://graph.facebook.com/v19.0/{WHATSAPP_PHONE_ID}/messages"
+        headers = {
+            "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+            "Content-Type": "application/json",
+        }
+
     text = text.replace("**", "*")
     
     payload = {
@@ -58,25 +74,38 @@ async def send_whatsapp_message(to_number: str, text: str) -> None:
     max_retries = 3
     
     for attempt in range(max_retries):
-        client = get_whatsapp_client()
+        # Crear connector y session FRESCOS en cada intento para evitar conexiones muertas
+        connector = aiohttp.TCPConnector(
+            family=socket.AF_INET,
+            ssl=True,          # TLS obligatorio
+            limit=1,           # Solo necesitamos 1 conexión
+            force_close=True,  # Cerrar conexión después de usarla
+        )
+        timeout = aiohttp.ClientTimeout(total=15.0)
+        
         try:
-            response = await client.post(url, headers=headers, json=payload)
-            response.raise_for_status()
-            logger.info(f"✅ Mensaje enviado exitosamente a {to_number}")
-            return # Salir si fue exitoso
-        except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.WriteTimeout, httpx.PoolTimeout):
-            logger.warning(f"⚠️ Timeout con Meta (intento {attempt+1}/{max_retries}). Destruyendo cliente y reintentando...")
-            # Destruir el cliente para forzar una nueva conexión TCP limpia
-            global _whatsapp_client
-            _whatsapp_client = None
-            await asyncio.sleep(2)
-        except httpx.HTTPStatusError as e:
-            logger.error(f"❌ Error al enviar mensaje WhatsApp: {e.response.text}")
-            return
+            async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+                async with session.post(url, headers=headers, json=payload) as response:
+                    body = await response.text()
+                    if response.status >= 400:
+                        logger.error(f"❌ WhatsApp API error ({response.status}): {body}")
+                        return  # Error de API, no reintentar
+                    logger.info(f"✅ Mensaje enviado exitosamente a {to_number}")
+                    return
+        except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
+            logger.warning(f"⚠️ Fallo red ({e.__class__.__name__}) intento {attempt+1}/{max_retries}")
+            # Invalidar IP cacheada por si cambió
+            if attempt == 1:
+                global _graph_ip
+                _graph_ip = None
+                _resolve_graph_ip()
+            await asyncio.sleep(2 * (attempt + 1))  # Backoff: 2s, 4s, 6s
         except Exception as e:
             import traceback
             logger.error(f"❌ Excepción enviando WhatsApp: {e}\n{traceback.format_exc()}")
             return
+    
+    logger.error(f"❌ No se pudo enviar mensaje a {to_number} después de {max_retries} intentos.")
 
 async def process_whatsapp_message(body: Dict[str, Any]) -> None:
     """Procesa el JSON entrante del webhook de WhatsApp."""
@@ -203,15 +232,10 @@ async def handle_ai_response(user_number: str, user_text: str) -> None:
     _current_user_id.set(user_id)
     
     try:
-        # Inicializar modelo
+        # Inicializar cliente google.genai (nuevo SDK)
         if _gemini_model is None:
-            import google.generativeai as genai
-            genai.configure(api_key=GEMINI_API_KEY)
-            _gemini_model = genai.GenerativeModel(
-                model_name=GEMINI_MODEL,
-                system_instruction=SYSTEM_PROMPT,
-                tools=[add_item_tool, mark_item_done_tool, add_calendar_event_tool, delete_calendar_event_tool]
-            )
+            from google import genai
+            _gemini_model = genai.Client(api_key=GEMINI_API_KEY)
 
         # 1. Recuperar memoria (Firebase)
         firebase_history = await asyncio.to_thread(memory.build_gemini_history, user_id)
@@ -230,20 +254,27 @@ async def handle_ai_response(user_number: str, user_text: str) -> None:
         parts.append(f"## Consulta del usuario:\n{user_text}")
         enriched_prompt = "\n\n".join(parts)
 
-        # 3. Invocar Gemini
-        chat = _gemini_model.start_chat(
-            history=history,
-            enable_automatic_function_calling=True
-        )
+        # 3. Invocar Gemini (google.genai SDK con function calling automático)
+        from google.genai import types
+        
+        all_contents = history + [{"role": "user", "parts": [{"text": enriched_prompt}]}]
+        
         response = await asyncio.to_thread(
-            lambda: chat.send_message(enriched_prompt)
+            lambda: _gemini_model.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=all_contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    tools=[add_item_tool, mark_item_done_tool, add_calendar_event_tool, delete_calendar_event_tool],
+                ),
+            )
         )
         bot_reply = response.text
 
         # 4. Guardar historiales
         await asyncio.to_thread(memory.save_message, user_id, "user", user_text)
         await asyncio.to_thread(memory.save_message, user_id, "model", bot_reply)
-        _conversation_history[user_id] = chat.history
+        _conversation_history[user_id] = history
 
         # 5. Enviar mensaje por WhatsApp
         await send_whatsapp_message(user_number, bot_reply)
