@@ -76,4 +76,5 @@ if __name__ == "__main__":
         logger.info(f"🔍 {var}: {masked}")
         
     print("--- INICIANDO SERVIDOR WEBHOOK ---", flush=True)
-    uvicorn.run(app, host="0.0.0.0", port=7860, log_level="warning")
+    port = int(os.getenv("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
